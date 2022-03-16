@@ -12,9 +12,7 @@ pip install -r requirements.txt
 To roughly re-create Figure 1 in the paper run:
 
 ```
-export PYTHONPATH=$(pwd)/grokk_replica/
-cd scripts/
-python train_grok.py
+python -m grokk_replica.train
 ```
 
 ![](grokk.png)

@@ -36,3 +36,13 @@ typing-extensions
 urllib3==1.26.7
 wandb
 yaspin==2.1.0
+
+# Utilities
+black
+flake8
+gpustat
+isort
+ipywidgets
+jupyterlab
+jupyterlab-code-formatter
+mypy

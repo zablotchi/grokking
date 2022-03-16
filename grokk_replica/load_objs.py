@@ -1,7 +1,7 @@
 import torch
-from datasets import ModSumDataset, ModSubtractDataset, ModDivisonDataset, PermutationGroup
-from grokk_model import GrokkModel
-from utils import convert_path
+from grokk_replica.datasets import ModSumDataset, ModSubtractDataset, ModDivisonDataset, PermutationGroup
+from grokk_replica.grokk_model import GrokkModel
+from grokk_replica.utils import convert_path
 registry = {}
 
 def register(name):
