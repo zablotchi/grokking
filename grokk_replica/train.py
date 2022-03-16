@@ -1,16 +1,14 @@
-import torch
-from torch.optim import lr_scheduler
-from torch.utils import data
-from torch.utils.data import IterableDataset
-from datasets import AbstractDataset
-from utils import combine_logs
-from torch.utils.data import DataLoader
-import torch.nn as nn
-from tqdm.auto import tqdm
-import wandb
 import hydra
+import torch
+import wandb
 from omegaconf import DictConfig, OmegaConf
-from load_objs import load_item
+from torch.utils.data import DataLoader, IterableDataset
+from tqdm.auto import tqdm
+
+from grokk_replica.datasets import AbstractDataset
+from grokk_replica.load_objs import load_item
+from grokk_replica.utils import combine_logs
+
 
 class GroupDataset(IterableDataset):
     def __init__(self, dataset: AbstractDataset, split: str):
@@ -38,7 +36,12 @@ def train(config):
     train_cfg = config['train']
     wandb_cfg = config['wandb']
     if wandb_cfg['use_wandb']:
-        wandb.init(project=wandb_cfg['wandb_project'], config=config)
+        wandb.init(
+            entity=wandb_cfg['wandb_entity'],
+            project=wandb_cfg['wandb_project'],
+            tags=wandb_cfg['wandb_tags'], 
+            config=config,
+        )
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     dataset = load_item(config['dataset'])
