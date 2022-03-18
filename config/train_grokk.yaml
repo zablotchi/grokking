@@ -26,5 +26,4 @@ wandb:
   use_wandb: true
   wandb_project: grokking
   wandb_entity: data-frugal-learning
-  wandb_tags:
-    - transformer
+  wandb_tags: [transformer]
