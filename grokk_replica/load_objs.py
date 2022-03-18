@@ -1,6 +1,6 @@
 import torch
 from grokk_replica.datasets import ModSumDataset, ModSubtractDataset, ModDivisonDataset, PermutationGroup
-from grokk_replica.grokk_model import GrokkModel
+from grokk_replica.grokk_model import GrokkModel, GrokkModelFC
 from grokk_replica.utils import convert_path
 registry = {}
 
@@ -46,3 +46,8 @@ def load_grokk_model(config, vocab_size, out_size, device, verbose=True):
             print('loaded.')
     return model
 
+@register('grokk_model_fc')
+def load_grokk_model_fc(config, vocab_size, out_size, device, verbose=True):
+    return GrokkModelFC(
+        vocab_size, config['hidden_dim'], out_size, config['num_layers'], device
+    ).to(device)

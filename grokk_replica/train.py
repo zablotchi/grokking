@@ -39,10 +39,10 @@ def train(config):
         wandb.init(
             entity=wandb_cfg['wandb_entity'],
             project=wandb_cfg['wandb_project'],
-            tags=wandb_cfg['wandb_tags'], 
+            tags=wandb_cfg['wandb_tags'],
             config=config,
         )
-    
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     dataset = load_item(config['dataset'])
     train_data = GroupDataset(dataset, 'train')
@@ -51,8 +51,8 @@ def train(config):
     model.train()
     train_dataloader = DataLoader(train_data, num_workers=train_cfg['num_workers'], batch_size=train_cfg['bsize'])
     val_dataloader = DataLoader(val_data, num_workers=train_cfg['num_workers'], batch_size=train_cfg['bsize'])
-    optim = torch.optim.AdamW(model.parameters(), lr=train_cfg['lr'], 
-                              weight_decay=train_cfg['weight_decay'], 
+    optim = torch.optim.AdamW(model.parameters(), lr=train_cfg['lr'],
+                              weight_decay=train_cfg['weight_decay'],
                               betas=train_cfg['betas'])
     lr_schedule = torch.optim.lr_scheduler.LambdaLR(optim, lr_lambda=lambda s: min(s / train_cfg['warmup_steps'], 1))
     step = 0
@@ -71,7 +71,7 @@ def train(config):
                         break
                     _, val_logs = model.get_loss(val_x.to(device), val_y.to(device))
                     all_val_logs.append(val_logs)
-            out_log = {'val': combine_logs(all_val_logs), 'train': combine_logs([logs]), 'step': (step+1), 
+            out_log = {'val': combine_logs(all_val_logs), 'train': combine_logs([logs]), 'step': (step+1),
                        'lr': float(lr_schedule.get_last_lr()[0])}
             print(out_log)
             if wandb_cfg['use_wandb']:
@@ -89,4 +89,3 @@ def main(cfg : DictConfig):
 
 if __name__ == "__main__":
     main()
-

@@ -37,6 +37,9 @@ urllib3==1.26.7
 wandb
 yaspin==2.1.0
 
+# Other libraries
+einops
+
 # Utilities
 black
 flake8

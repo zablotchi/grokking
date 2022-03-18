@@ -1,0 +1,5 @@
+name: grokk_model_fc
+hidden_dim: 256
+num_layers: 4
+checkpoint_path: null
+strict_load: true
