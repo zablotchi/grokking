@@ -6,7 +6,9 @@ from grokk_replica.datasets import (
     ModSumDataset,
     PermutationGroup,
 )
+from grokk_replica import datasets_cont
 from grokk_replica.grokk_model import GrokkModel
+from grokk_replica.grokk_model_cont import GrokkModelContOut
 from grokk_replica.utils import convert_path
 
 registry = {}
@@ -50,6 +52,16 @@ def load_mod_subtract_dataset(config, verbose=True):
     return PermutationGroup(config["k"], config["frac_train"])
 
 
+@register("sum_dataset_cont")
+def load_mod_sum_dataset(config, verbose=True):
+    return datasets_cont.SumDatasetCont(config["p"], config["frac_train"])
+
+
+@register("sub_dataset_cont")
+def load_mod_subtract_dataset(config, verbose=True):
+    return datasets_cont.SubDatasetCont(config["p"], config["frac_train"])
+
+
 @register("grokk_model")
 def load_grokk_model(config, vocab_size, out_size, device, verbose=True):
     model = GrokkModel(config["transformer_config"], vocab_size, out_size, device).to(
@@ -66,4 +78,12 @@ def load_grokk_model(config, vocab_size, out_size, device, verbose=True):
         )
         if verbose:
             print("loaded.")
+    return model
+
+
+@register("grokk_model_cont_out")
+def load_grokk_model(config, vocab_size, out_size, device, verbose=True):
+    model = GrokkModelContOut(
+        config["transformer_config"], vocab_size, out_size, device
+    ).to(device)
     return model
