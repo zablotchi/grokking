@@ -13,7 +13,7 @@ class AbstractDatasetCont(AbstractDataset):
         a = self.ordered_group_elements1[idx // len(self.group_elements2)]
         b = self.ordered_group_elements2[idx % len(self.group_elements2)]
         c = self.fetch_output(a, b)
-        return self.encode([a, b]), c, None
+        return self.encode([a, "o", b, "="]), c, None
 
     def fetch_train_example(self):
         idx = random.choice(self.train_pairs)
