@@ -2,6 +2,7 @@ import hydra
 import torch
 import wandb
 from omegaconf import DictConfig, OmegaConf
+from torch import nn
 from torch.utils.data import DataLoader, IterableDataset
 from tqdm.auto import tqdm
 
@@ -30,6 +31,23 @@ class GroupDataset(IterableDataset):
     def __next__(self):
         x, y, _ = self.fetch_f()
         return torch.tensor(x), torch.tensor(y)
+
+
+def get_eval_logs(
+    model: nn.Module,
+    dl: DataLoader,
+    n_batches: int,
+    device: torch.device,
+):
+    with torch.no_grad():
+        all_logs = []
+        for i, (x, y) in tqdm(enumerate(dl)):
+            if i >= n_batches:
+                break
+            _, logs = model.get_loss(x.to(device), y.to(device))
+            all_logs.append(logs)
+
+    return all_logs
 
 
 def train(config):
@@ -67,23 +85,30 @@ def train(config):
     )
     step = 0
     for x, y in tqdm(train_dataloader):
-        loss, logs = model.get_loss(x.to(device), y.to(device))
+        loss, _ = model.get_loss(x.to(device), y.to(device))
         optim.zero_grad()
         loss.backward()
         optim.step()
         lr_schedule.step()
         if (step + 1) % train_cfg["eval_every"] == 0:
             model.eval()
-            with torch.no_grad():
-                all_val_logs = []
-                for i, (val_x, val_y) in tqdm(enumerate(val_dataloader)):
-                    if i >= train_cfg["eval_batches"]:
-                        break
-                    _, val_logs = model.get_loss(val_x.to(device), val_y.to(device))
-                    all_val_logs.append(val_logs)
+
+            train_logs = get_eval_logs(
+                model=model,
+                dl=train_dataloader,
+                n_batches=train_cfg["eval_batches"],
+                device=device,
+            )
+            val_logs = get_eval_logs(
+                model=model,
+                dl=val_dataloader,
+                n_batches=train_cfg["eval_batches"],
+                device=device,
+            )
+
             out_log = {
-                "val": combine_logs(all_val_logs),
-                "train": combine_logs([logs]),
+                "val": combine_logs(val_logs),
+                "train": combine_logs(train_logs),
                 "step": (step + 1),
                 "lr": float(lr_schedule.get_last_lr()[0]),
             }
