@@ -13,7 +13,16 @@ class GrokkModelContOut(nn.Module):
         self.transformer = Transformer(
             **transformer_config, vocab_size=vocab_size, output_size=output_size
         )
-        self.fc = nn.Linear(in_features=output_size, out_features=1)
+        # self.cont_head = nn.Sequential(
+        #     nn.Softmax(),
+        #     nn.Linear(in_features=output_size, out_features=1),
+        # )
+        self.cont_head = nn.Sequential(
+            nn.ReLU(),
+            nn.Linear(in_features=output_size, out_features=output_size),
+            nn.ReLU(),
+            nn.Linear(in_features=output_size, out_features=1),
+        )
         self.device = device
 
     def forward(self, x):
@@ -25,7 +34,7 @@ class GrokkModelContOut(nn.Module):
         )
         transformer_embeddings, attns, _ = self.transformer(x, attn_mask)
         predictions = einops.rearrange(
-            self.fc(transformer_embeddings),
+            self.cont_head(transformer_embeddings),
             "... 1 -> ...",
         )
         return predictions, attns
