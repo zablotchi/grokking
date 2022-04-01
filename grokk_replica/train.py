@@ -37,14 +37,19 @@ def get_eval_logs(
     model: nn.Module,
     dl: DataLoader,
     n_batches: int,
+    loss_key: str,
     device: torch.device,
 ):
     with torch.no_grad():
         all_logs = []
-        for i, (x, y) in tqdm(enumerate(dl)):
+        for i, (x, y) in enumerate(dl):
             if i >= n_batches:
                 break
-            _, logs = model.get_loss(x.to(device), y.to(device))
+            _, logs = model.get_loss(
+                x.to(device),
+                y.to(device),
+                loss_key=loss_key,
+            )
             all_logs.append(logs)
 
     return all_logs
@@ -84,8 +89,13 @@ def train(config):
         optim, lr_lambda=lambda s: min(s / train_cfg["warmup_steps"], 1)
     )
     step = 0
-    for x, y in tqdm(train_dataloader):
-        loss, _ = model.get_loss(x.to(device), y.to(device))
+    pbar = tqdm(train_dataloader)
+    for x, y in pbar:
+        loss, _ = model.get_loss(
+            x.to(device),
+            y.to(device),
+            loss_key=train_cfg["loss_key"],
+        )
         optim.zero_grad()
         loss.backward()
         optim.step()
@@ -97,12 +107,14 @@ def train(config):
                 model=model,
                 dl=train_dataloader,
                 n_batches=train_cfg["eval_batches"],
+                loss_key=train_cfg["loss_key"],
                 device=device,
             )
             val_logs = get_eval_logs(
                 model=model,
                 dl=val_dataloader,
                 n_batches=train_cfg["eval_batches"],
+                loss_key=train_cfg["loss_key"],
                 device=device,
             )
 
@@ -112,7 +124,10 @@ def train(config):
                 "step": (step + 1),
                 "lr": float(lr_schedule.get_last_lr()[0]),
             }
-            print(out_log)
+            pbar.set_description(
+                f"train.loss: {out_log['train']['loss'] : .6f}"
+                + f" val.loss: {out_log['val']['loss'] : .6f}"
+            )
             if wandb_cfg["use_wandb"]:
                 wandb.log(out_log)
             model.train()

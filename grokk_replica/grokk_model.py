@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 from grokk_replica.transformer import Transformer
 from grokk_replica.utils import causal_attn_mask, parameter_norm
+from grokk_replica.losses import mse_loss_on_logits
 
 
 class GrokkModel(nn.Module):
@@ -24,10 +25,14 @@ class GrokkModel(nn.Module):
         predictions, attns, _ = self.transformer(x, attn_mask)
         return predictions, attns
 
-    def get_loss(self, x, y):
+    def get_loss(self, x, y, loss_key: str):
         predictions, attns = self(x)
-        # print(torch.argmax(predictions[:, -1, :], dim=-1), x[:, -1])
-        loss = F.cross_entropy(predictions[:, -1, :], y)
+
+        loss_dict: dict[str, torch.Tensor] = {
+            "xent": F.cross_entropy(predictions[:, -1, :], y),
+            "mse": mse_loss_on_logits(predictions[:, -1, :], y),
+        }
+
         accuracy = (torch.argmax(predictions[:, -1, :], dim=-1) == y).float().mean()
         attn_entropies = sum(
             [
@@ -36,12 +41,13 @@ class GrokkModel(nn.Module):
             ]
         ) / len(attns)
         param_norm = parameter_norm(self)
-        return loss, {
-            "loss": (loss.item(), x.shape[0]),
+
+        return loss_dict[loss_key], {
+            "loss": (loss_dict[loss_key].item(), x.shape[0]),
             "accuracy": (accuracy.item(), x.shape[0]),
             "attn_entropy": (
                 attn_entropies,
                 len(attns) * x.shape[0] * (x.shape[1] - 1),
             ),
             "param_norm": (param_norm, 1),
-        }
+        } | {k: (v.item(), x.shape[0]) for k, v in loss_dict.items()}
