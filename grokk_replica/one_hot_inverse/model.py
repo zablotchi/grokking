@@ -24,14 +24,17 @@ class OneHotFCNet(pl.LightningModule):
         super().__init__()
         self.cfg = cfg
 
-        layers: list[nn.Module] = [
-            nn.Linear(cfg.n_classes, cfg.hidden_width),
-            nn.ReLU(),
-        ]
-        for _ in range(cfg.depth - 2):
-            layers.append(nn.Linear(cfg.hidden_width, cfg.hidden_width))
-            layers.append(nn.ReLU())
-        layers.append(nn.Linear(cfg.hidden_width, 1))
+        if cfg.depth >= 2:
+            layers: list[nn.Module] = [
+                nn.Linear(cfg.n_classes, cfg.hidden_width),
+                nn.ReLU(),
+            ]
+            for _ in range(cfg.depth - 2):
+                layers.append(nn.Linear(cfg.hidden_width, cfg.hidden_width))
+                layers.append(nn.ReLU())
+            layers.append(nn.Linear(cfg.hidden_width, 1))
+        else:
+            layers = [nn.Linear(cfg.hidden_width, 1)]
 
         self.model = nn.Sequential(*layers)
 
