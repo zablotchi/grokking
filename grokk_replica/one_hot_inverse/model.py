@@ -12,7 +12,11 @@ class OneHotFCNetConfig:
     hidden_width: int
     depth: int
 
+    opt_type: str = "adam"  # or adamw
+
     learning_rate: float = 3e-4
+    weight_decay: float = 0.0
+    betas: tuple[float, float] = (0.9, 0.98)
 
 
 class OneHotFCNet(pl.LightningModule):
@@ -43,5 +47,19 @@ class OneHotFCNet(pl.LightningModule):
         return mse
 
     def configure_optimizers(self):
-        opt = torch.optim.Adam(self.parameters(), lr=self.cfg.learning_rate)
+        if self.cfg.opt_type == "adam":
+            opt = torch.optim.Adam(
+                self.parameters(),
+                lr=self.cfg.learning_rate,
+            )
+        elif self.cfg.opt_type == "adamw":
+            opt = torch.optim.AdamW(
+                self.parameters(),
+                lr=self.cfg.learning_rate,
+                weight_decay=self.cfg.weight_decay,
+                betas=self.cfg.betas,
+            )
+        else:
+            raise NotImplementedError
+
         return [opt], []
