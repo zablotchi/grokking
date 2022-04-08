@@ -46,3 +46,9 @@ ipywidgets
 jupyterlab
 jupyterlab-code-formatter
 mypy
+
+# Others
+matplotlib
+pandas
+einops
+pytorch-lightning
