@@ -41,7 +41,7 @@ def get_eval_logs(
 ):
     with torch.no_grad():
         all_logs = []
-        for i, (x, y) in tqdm(enumerate(dl)):
+        for i, (x, y) in enumerate(dl):
             if i >= n_batches:
                 break
             _, logs = model.get_loss(x.to(device), y.to(device))
@@ -74,7 +74,7 @@ def train(config):
     val_dataloader = DataLoader(
         val_data, num_workers=train_cfg["num_workers"], batch_size=train_cfg["bsize"]
     )
-    optim = torch.optim.AdamW(
+    optim = torch.optim.Adam(
         model.parameters(),
         lr=train_cfg["lr"],
         weight_decay=train_cfg["weight_decay"],
@@ -84,7 +84,8 @@ def train(config):
         optim, lr_lambda=lambda s: min(s / train_cfg["warmup_steps"], 1)
     )
     step = 0
-    for x, y in tqdm(train_dataloader):
+    pbar = tqdm(train_dataloader)
+    for x, y in pbar:
         loss, _ = model.get_loss(x.to(device), y.to(device))
         optim.zero_grad()
         loss.backward()
@@ -112,10 +113,11 @@ def train(config):
                 "step": (step + 1),
                 "lr": float(lr_schedule.get_last_lr()[0]),
             }
-            print(out_log)
             if wandb_cfg["use_wandb"]:
                 wandb.log(out_log)
             model.train()
+
+            pbar.set_description(f"train.loss: {out_log['train']['loss']: .8f}")
         step += 1
         if train_cfg["max_steps"] is not None and step >= train_cfg["max_steps"]:
             break
