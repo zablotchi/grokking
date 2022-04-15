@@ -1,3 +1,4 @@
+import einops
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -12,6 +13,12 @@ class GrokkModel(nn.Module):
         self.transformer = Transformer(
             **transformer_config, vocab_size=vocab_size, output_size=output_size
         )
+        self.out_head = nn.Sequential(
+            nn.ReLU(),
+            nn.Linear(in_features=output_size, out_features=output_size),
+            nn.ReLU(),
+            nn.Linear(in_features=output_size, out_features=output_size),
+        )
         self.device = device
 
     def forward(self, x):
@@ -21,7 +28,8 @@ class GrokkModel(nn.Module):
             .repeat(x.shape[0], 1, 1)
             .to(self.device)
         )
-        predictions, attns, _ = self.transformer(x, attn_mask)
+        transformer_embeddings, attns, _ = self.transformer(x, attn_mask)
+        predictions = self.out_head(transformer_embeddings)
         return predictions, attns
 
     def get_loss(self, x, y):
