@@ -37,10 +37,11 @@ class GrokkModelContOut(nn.Module):
             .to(self.device)
         )
         transformer_embeddings, attns, _ = self.transformer(x, attn_mask)
-        predictions = einops.rearrange(
-            self.cont_head(transformer_embeddings),
-            "... 1 -> ...",
-        )
+        # predictions = einops.rearrange(
+        #     self.cont_head(transformer_embeddings),
+        #     "... 1 -> ...",
+        # )
+        predictions = self.output_head(transformer_embeddings)
         return predictions, attns
 
     def get_loss(self, x, y):
@@ -64,3 +65,14 @@ class GrokkModelContOut(nn.Module):
             ),
             "param_norm": (param_norm, 1),
         }
+
+    def output_head(self, logits: torch.Tensor) -> torch.Tensor:
+        # return self.softmax(logits) @ (
+        #     torch.arange(logits.shape[-1]).to(self.device) / logits.shape[-1]
+        # )
+        vocab_size = logits.shape[-1]
+        return torch.einsum(
+            "bsv, v -> bs",
+            logits.softmax(dim=-1),
+            (torch.arange(vocab_size).to(self.device) / vocab_size),
+        )
