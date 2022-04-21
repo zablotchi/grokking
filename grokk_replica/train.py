@@ -80,9 +80,12 @@ def train(config):
         weight_decay=train_cfg["weight_decay"],
         betas=train_cfg["betas"],
     )
-    lr_schedule = torch.optim.lr_scheduler.LambdaLR(
-        optim, lr_lambda=lambda s: min(s / train_cfg["warmup_steps"], 1)
+    lr_schedule = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optim, 'min', patience=50, verbose=True
     )
+    # torch.optim.lr_scheduler.LambdaLR(
+    #     optim, lr_lambda=lambda s: min(s / train_cfg["warmup_steps"], 1)
+    # )
     step = 0
     pbar = tqdm(train_dataloader)
     for x, y in pbar:
@@ -90,7 +93,7 @@ def train(config):
         optim.zero_grad()
         loss.backward()
         optim.step()
-        lr_schedule.step()
+        lr_schedule.step(loss.detach())
         if (step + 1) % train_cfg["eval_every"] == 0:
             model.eval()
 
@@ -111,13 +114,13 @@ def train(config):
                 "val": combine_logs(val_logs),
                 "train": combine_logs(train_logs),
                 "step": (step + 1),
-                "lr": float(lr_schedule.get_last_lr()[0]),
+                # "lr": float(lr_schedule.get_last_lr()[0]),
             }
             if wandb_cfg["use_wandb"]:
                 wandb.log(out_log)
             model.train()
 
-            pbar.set_description(f"train.loss: {out_log['train']['loss']: .8f}")
+            pbar.set_description(f"train.rmse: {out_log['train']['rmse']: .6e}")
         step += 1
         if train_cfg["max_steps"] is not None and step >= train_cfg["max_steps"]:
             break
