@@ -1,12 +1,11 @@
 name: grokk_model_cont_out
 transformer_config:
   max_length: 5
-  # We use GPT2 size: https://bmk.sh/2020/05/29/GPT-3-A-Brief-Summary/
-  heads: 25 # 4
-  hidden_dim: 1600 # 128
-  attn_dim: 64 # 32
-  intermediate_dim: 1600 # 512
-  num_blocks: 3
+  heads: 4
+  hidden_dim: 128
+  attn_dim: 32
+  intermediate_dim: 512
+  num_blocks: 2
   block_repeats: 1
   dropout: 0.1
   pre_norm: true
