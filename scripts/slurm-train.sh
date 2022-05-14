@@ -23,11 +23,33 @@ conda activate grokking
 source scripts/rand-mallory.sh
 { mallory -config \$TMP_MALLORY_CONFIG; } &
 
-# Run experiment
-{ python -m grokk_replica.train $@; } &
+# Utility function that waits until n background jobs are left running
+# First argument is n
+function waitUntilNJobsRemain() {
+  local n_jobs=\$(jobs -rp | wc -l)
+  echo "Waiting on \$n_jobs background jobs until \$1 jobs left..."
+  while [[ \$n_jobs -gt \$1 ]]; do
+    n_jobs=\$(jobs -rp | wc -l)
+    echo -n "."
+    sleep 1
+  done
+  echo ""
+}
 
-# Wait till experiment finishes, then kill mallory
-# See https://unix.stackexchange.com/a/231678/466333 for details.
-wait -n
+# Experiment loop
+fracs=(\$(seq 0.05 0.05 0.95))
+for frac in "\${fracs[@]}"
+do
+  # Run 4 experiments in parallel
+  waitUntilNJobsRemain 4
+
+  # Run experiment
+  { python -m grokk_replica.train dataset.frac_train=\$frac $@; } &
+done
+
+# Wait until all experiments finish.
+waitUntilNJobsRemain 1
+
+# Then kill mallory
 pkill -P \$\$
 EOT
